@@ -81,11 +81,13 @@ case class ProjectExec(projectList: Seq[NamedExpression], child: SparkPlan)
 
     // Evaluation of non-deterministic expressions can't be deferred.
     val nonDeterministicAttrs = projectList.filterNot(_.deterministic).map(_.toAttribute)
+    // TIMER scope (session)
     s"""
        |// common sub-expressions
        |${evaluateVariables(localValInputs)}
        |$subExprsCode
        |${evaluateRequiredVariables(output, resultVars, AttributeSet(nonDeterministicAttrs))}
+       |// System.out.println("scope");
        |${consume(ctx, resultVars)}
      """.stripMargin
   }

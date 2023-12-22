@@ -80,6 +80,7 @@ case class ExpandExec(
           }
 
           numOutputRows += 1
+          logWarning("num output rows: " + numOutputRows)
           result
         }
       }
@@ -138,6 +139,7 @@ case class ExpandExec(
     // Size of sameOutput array should equal N.
     // If sameOutput(i) is true, then the i-th column has the same value for all output rows given
     // an input row.
+    // --> is the word column
     val sameOutput: Array[Boolean] = output.indices.map { colIndex =>
       projections.map(p => p(colIndex)).toSet.size == 1
     }.toArray
@@ -145,12 +147,15 @@ case class ExpandExec(
     // Part 1: declare variables for each column
     // If a column has the same value for all output rows, then we also generate its computation
     // right after declaration. Otherwise its value is computed in the part 2.
+    // --> word column
     lazy val attributeSeq: AttributeSeq = child.output
     val outputColumns = output.indices.map { col =>
       val firstExpr = projections.head(col)
       if (sameOutput(col)) {
         // This column is the same across all output rows. Just generate code for it here.
-        BindReferences.bindReference(firstExpr, attributeSeq).genCode(ctx)
+        val windowCol = BindReferences.bindReference(firstExpr, attributeSeq)
+        // logWarning("word column: " + windowCol.toString)
+        windowCol.genCode(ctx)
       } else {
         val isNull = ctx.addMutableState(
           CodeGenerator.JAVA_BOOLEAN,
@@ -172,7 +177,10 @@ case class ExpandExec(
       val (exprCodesWithIndices, inputVarSets) = exprs.indices.flatMap { col =>
         if (!sameOutput(col)) {
           val boundExpr = BindReferences.bindReference(exprs(col), attributeSeq)
+          // logWarning("window: " + boundExpr.toString)
           val exprCode = boundExpr.genCode(ctx)
+          // codice che computa la window
+          // logWarning("window expression code: " + exprCode.code.toString())
           val inputVars = CodeGenerator.getLocalInputVariableValues(ctx, boundExpr)._1
           Some(((col, exprCode), inputVars))
         } else {
@@ -193,6 +201,8 @@ case class ExpandExec(
          """.stripMargin
       }.mkString("\n")
     }
+
+    // logWarning("updateCodes: " + updateCodes.toString)
 
     val splitThreshold = SQLConf.get.methodSplitThreshold
     val cases = if (switchCaseExprs.flatMap(_._2.map(_._2.code.length)).sum > splitThreshold) {
@@ -230,12 +240,16 @@ case class ExpandExec(
       }
     }
 
+    // logWarning(cases.toString())
+
     val numOutput = metricTerm(ctx, "numOutputRows")
     val i = ctx.freshName("i")
     // these column have to declared before the loop.
     val evaluate = evaluateVariables(outputColumns)
+    // TIMER scope (sliding)
     s"""
        |$evaluate
+       |long scope_start = System.nanoTime();
        |for (int $i = 0; $i < ${projections.length}; $i ++) {
        |  switch ($i) {
        |    ${cases.mkString("\n").trim}
@@ -243,6 +257,8 @@ case class ExpandExec(
        |  $numOutput.add(1);
        |  ${consume(ctx, outputColumns)}
        |}
+       |long scope = System.nanoTime() - scope_start;
+       |System.out.println("scope " + scope);
      """.stripMargin
   }
 

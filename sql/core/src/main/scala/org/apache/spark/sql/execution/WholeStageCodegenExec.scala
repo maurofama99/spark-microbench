@@ -19,10 +19,8 @@ package org.apache.spark.sql.execution
 
 import java.util.Locale
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
-
 import scala.collection.mutable
 import scala.util.control.NonFatal
-
 import org.apache.spark.broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
@@ -40,6 +38,8 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.vectorized.ColumnarBatch
 import org.apache.spark.util.Utils
 
+// CODEGEN responsible for the data processing logic generation,
+//  it contains the doExecute() signature
 /**
  * An interface for those physical operators that support codegen.
  */
@@ -116,6 +116,8 @@ trait CodegenSupport extends SparkPlan {
    *      if (shouldStop()) return;
    *   }
    */
+
+  // CODEGEN abstract method implemented by the most of physical plans
   protected def doProduce(ctx: CodegenContext): String
 
   private def prepareRowVar(ctx: CodegenContext, row: String, colVars: Seq[ExprCode]): ExprCode = {
@@ -710,6 +712,8 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
     WholeStageCodegenExec.increaseCodeGenTime(duration)
 
     logDebug(s"\n${CodeFormatter.format(cleanedSource)}")
+    // CODEGEN source code for the subtree
+    // logWarning(s"\n${CodeFormatter.format(cleanedSource)}")
     (ctx, cleanedSource)
   }
 
@@ -792,10 +796,31 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
     } else {
       ""
     }
-    s"""
-      |${row.code}
-      |append(${row.value}$doCopy);
-     """.stripMargin.trim
+    // TIMER add (sliding & session)
+    // this is the addition to the intermediate hashmap for aggregation
+    // right after the scope computation
+    if (codegenStageId == 4) {
+      // logWarning("agg time" + aggTime)
+      s"""
+         |${row.code}
+         |long add_start = System.nanoTime();
+         |append(${row.value}$doCopy);
+         |long add_end = System.nanoTime();
+         |long add = add_end - add_start;
+         |System.out.println(((org.apache.spark.sql.execution.metric.SQLMetric) references[6] /* aggTime */));
+       """.stripMargin.trim
+    } else {
+      s"""
+         |${row.code}
+         |long add_start = System.nanoTime();
+         |append(${row.value}$doCopy);
+         |long add_end = System.nanoTime();
+         |long add = add_end - add_start;
+         |if (${codegenStageId} == 1)  {
+         |     System.out.println("add " + add);
+         |}
+       """.stripMargin.trim
+    }
   }
 
   override def generateTreeString(

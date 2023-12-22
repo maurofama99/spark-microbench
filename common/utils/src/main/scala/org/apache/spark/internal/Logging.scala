@@ -72,6 +72,10 @@ trait Logging {
     if (log.isWarnEnabled) log.warn(msg)
   }
 
+  protected def logWarningJava(msg: => java.lang.String): Unit = {
+    if (log.isWarnEnabled) log.warn(msg)
+  }
+
   protected def logError(msg: => String): Unit = {
     if (log.isErrorEnabled) log.error(msg)
   }

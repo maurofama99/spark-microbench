@@ -22,6 +22,8 @@ import org.apache.spark.sql.catalyst.expressions.BindReferences.bindReferences
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.types._
 
+// CODEGEN starts here, this class creates the initial projection and
+//  saves the data as UnsafeRow in a buffer
 /**
  * Generates a [[Projection]] that returns an [[UnsafeRow]].
  *

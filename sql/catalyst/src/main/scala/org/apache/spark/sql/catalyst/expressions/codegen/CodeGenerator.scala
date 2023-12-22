@@ -127,6 +127,12 @@ private[codegen] case class NewFunctionSpec(
     innerClassName: Option[String],
     innerClassInstance: Option[String])
 
+// CODEGEN This context-like object is important because it behaves like a container and a factory.
+//  Its former role consists of storing the list of the objects passed into generated classes.
+//  The references are used for instance to store a single instance of a given object,
+//  as it's the case of datetime expressions which store there the timezone, or datetime formatter.
+//  It's also the case of some other expressions which save there the references to themselves
+//  in order to call their methods from the generated code.
 /**
  * A context for codegen, tracking a list of objects that could be passed into generated Java
  * function.
@@ -153,6 +159,14 @@ class CodegenContext extends Logging {
     references += obj
     val clsName = Option(className).getOrElse(CodeGenerator.typeName(obj.getClass))
     s"(($clsName) references[$idx] /* $objName */)"
+  }
+
+  def getReferenceByName(objName: String): Option[Any] = {
+    val maybeObj = references.find {
+      obj: Any =>
+        obj.toString == objName
+    }
+    maybeObj
   }
 
   /**
@@ -1337,6 +1351,7 @@ class CodeAndComment(val body: String, val comment: collection.Map[String, Strin
   override def hashCode(): Int = body.hashCode
 }
 
+// CODEGEN the queries are translated into Java code by the implementations of this class
 /**
  * A base class for generators of byte code to perform expression evaluation.  Includes a set of
  * helpers for referring to Catalyst types and building trees that perform evaluation of individual

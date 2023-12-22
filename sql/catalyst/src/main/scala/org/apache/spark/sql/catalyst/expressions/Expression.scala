@@ -20,6 +20,7 @@ package org.apache.spark.sql.catalyst.expressions
 import java.util.Locale
 
 import org.apache.spark.{QueryContext, SparkException}
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.{FunctionRegistry, TypeCheckResult, TypeCoercion}
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult.DataTypeMismatch
@@ -85,7 +86,7 @@ import org.apache.spark.sql.types._
  * - [[ComplexTypeMergingExpression]]: to resolve output types of the complex expressions
  *                                     (e.g., [[CaseWhen]]).
  */
-abstract class Expression extends TreeNode[Expression] {
+abstract class Expression extends TreeNode[Expression] with Logging{
 
   /**
    * Returns true when an expression is a candidate for static evaluation before the query is

@@ -18,8 +18,12 @@
 // scalastyle:off println
 package org.apache.spark.examples.sql.streaming
 
+import java.sql.Timestamp
+
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.{count, session_window}
+import org.apache.spark.sql.functions.session_window
+
+// import org.apache.spark.sql.functions.{count, session_window}
 
 
 /**
@@ -49,7 +53,11 @@ object StructuredSessionization {
     val spark = SparkSession
       .builder()
       .appName("StructuredSessionization")
+      .config("spark.master", "local")
+      .config("spark.default.parallelism", 1)
       .getOrCreate()
+
+    spark.sparkContext.setLogLevel("WARN")
 
     import spark.implicits._
 
@@ -61,25 +69,20 @@ object StructuredSessionization {
       .option("includeTimestamp", true)
       .load()
 
-    // Split the lines into words, retaining timestamps
-    // split() splits each line into an array, and explode() turns the array into multiple rows
-    // treat words as sessionId of events
-    val events = lines
-      .selectExpr("explode(split(value, ' ')) AS sessionId", "timestamp AS eventTime")
+    val words = lines.as[(String, Timestamp)].flatMap(line =>
+      line._1.split(" ").map(word => (word, line._2))
+    ).toDF("word", "timestamp")
 
     // Sessionize the events. Track number of events, start and end timestamps of session,
     // and report session updates.
-    val sessionUpdates = events
-      .groupBy(session_window($"eventTime", "10 seconds") as Symbol("session"), $"sessionId")
-      .agg(count("*").as("numEvents"))
-      .selectExpr("sessionId", "CAST(session.start AS LONG)", "CAST(session.end AS LONG)",
-        "CAST(session.end AS LONG) - CAST(session.start AS LONG) AS durationMs",
-        "numEvents")
+    val sessionUpdates = words
+      .groupBy(session_window($"timestamp", "10 seconds"), $"word")
+      .count()// .explain()
 
     // Start running the query that prints the session updates to the console
     val query = sessionUpdates
       .writeStream
-      .outputMode("update")
+      .outputMode("complete")
       .format("console")
       .start()
 

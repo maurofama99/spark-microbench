@@ -18,8 +18,8 @@
 package org.apache.spark.sql.catalyst.expressions
 
 import java.util.Locale
-
 import org.apache.spark.SparkException
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.analysis.{TypeCheckResult, UnresolvedException}
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult.{DataTypeMismatch, TypeCheckSuccess}
 import org.apache.spark.sql.catalyst.dsl.expressions._
@@ -197,7 +197,7 @@ case class SpecifiedWindowFrame(
     frameType: FrameType,
     lower: Expression,
     upper: Expression)
-  extends WindowFrame with BinaryLike[Expression] with QueryErrorsBase {
+  extends WindowFrame with BinaryLike[Expression] with QueryErrorsBase with Logging {
 
   override def left: Expression = lower
   override def right: Expression = upper

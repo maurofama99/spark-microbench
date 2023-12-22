@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.execution.aggregate
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate._
@@ -30,7 +31,7 @@ import org.apache.spark.util.collection.{Utils => CUtils}
 /**
  * Utility functions used by the query planner to convert our plan to new aggregation code path.
  */
-object AggUtils {
+object AggUtils extends Logging {
 
   private def mayRemoveAggFilters(exprs: Seq[AggregateExpression]): Seq[AggregateExpression] = {
     exprs.map { ae =>
@@ -128,7 +129,6 @@ object AggUtils {
     // Check if we can use HashAggregate.
 
     // 1. Create an Aggregate Operator for partial aggregations.
-
     val groupingAttributes = groupingExpressions.map(_.toAttribute)
     val partialAggregateExpressions = aggregateExpressions.map(_.copy(mode = Partial))
     val partialAggregateAttributes =

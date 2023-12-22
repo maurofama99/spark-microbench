@@ -96,7 +96,6 @@ case class HashAggregateExec(
     val numTasksFallBacked = longMetric("numTasksFallBacked")
 
     child.execute().mapPartitionsWithIndex { (partIndex, iter) =>
-
       val beforeAgg = System.nanoTime()
       val hasInput = iter.hasNext
       val res = if (!hasInput && groupingExpressions.nonEmpty) {
@@ -313,8 +312,9 @@ case class HashAggregateExec(
       val resultVars = bindReferences[Expression](
         resultExpressions,
         inputAttrs).map(_.genCode(ctx))
-      val evaluateNondeterministicResults =
+      val evaluateNondeterministicResults = {
         evaluateNondeterministicVariables(output, resultVars, resultExpressions)
+      }
       s"""
          |$evaluateKeyVars
          |$evaluateBufferVars
@@ -655,13 +655,16 @@ case class HashAggregateExec(
 
     val oomeClassName = classOf[SparkOutOfMemoryError].getName
 
-    val findOrInsertRegularHashMap: String =
+    val findOrInsertRegularHashMap: String = {
+      // TIMER content
       s"""
+         |
          |// generate grouping key
          |${unsafeRowKeyCode.code}
          |int $unsafeRowKeyHash = ${unsafeRowKeyCode.value}.hashCode();
          |if ($checkFallbackForBytesToBytesMap) {
          |  // try to get the buffer from hash map
+         |  // System.out.println("partial content");
          |  $unsafeRowBuffer =
          |    $hashMapTerm.getAggregationBufferFromUnsafeRow($unsafeRowKeys, $unsafeRowKeyHash);
          |}
@@ -676,6 +679,7 @@ case class HashAggregateExec(
          |  $resetCounter
          |  // the hash map had be spilled, it should have enough memory now,
          |  // try to allocate buffer again.
+         |  // System.out.println("partial content");
          |  $unsafeRowBuffer = $hashMapTerm.getAggregationBufferFromUnsafeRow(
          |    $unsafeRowKeys, $unsafeRowKeyHash);
          |  if ($unsafeRowBuffer == null) {
@@ -684,6 +688,7 @@ case class HashAggregateExec(
          |  }
          |}
        """.stripMargin
+    }
 
     val findOrInsertHashMap: String = {
       if (isFastHashMapEnabled) {
