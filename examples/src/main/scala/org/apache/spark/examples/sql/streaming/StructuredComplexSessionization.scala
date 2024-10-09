@@ -106,6 +106,8 @@ object StructuredComplexSessionization {
       .appName("StructuredComplexSessionization")
       .getOrCreate()
 
+    spark.sparkContext.setLogLevel("WARN")
+
     import spark.implicits._
 
     // Create DataFrame representing the stream of input lines from connection to host:port
@@ -235,7 +237,7 @@ object StructuredComplexSessionization {
     // Start running the query that prints the session updates to the console
     val query = sessionUpdates
       .writeStream
-      .outputMode("append")
+      .outputMode("complete")
       .format("console")
       .start()
 

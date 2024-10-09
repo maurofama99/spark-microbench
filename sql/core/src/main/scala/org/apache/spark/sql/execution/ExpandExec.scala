@@ -246,10 +246,10 @@ case class ExpandExec(
     val i = ctx.freshName("i")
     // these column have to declared before the loop.
     val evaluate = evaluateVariables(outputColumns)
-    // TIMER scope (sliding)
+    // TIMER add (sliding)
     s"""
        |$evaluate
-       |long scope_start = System.nanoTime();
+       |// long add_start = System.nanoTime();
        |for (int $i = 0; $i < ${projections.length}; $i ++) {
        |  switch ($i) {
        |    ${cases.mkString("\n").trim}
@@ -257,8 +257,8 @@ case class ExpandExec(
        |  $numOutput.add(1);
        |  ${consume(ctx, outputColumns)}
        |}
-       |long scope = System.nanoTime() - scope_start;
-       |System.out.println("scope " + scope);
+       |// long add = System.nanoTime() - add_start;
+       |// System.out.println("add " + add);
      """.stripMargin
   }
 

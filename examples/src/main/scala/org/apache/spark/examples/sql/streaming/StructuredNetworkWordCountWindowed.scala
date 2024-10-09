@@ -22,6 +22,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
 import java.sql.Timestamp
+
 import scala.util.Random
 
 
@@ -57,13 +58,11 @@ object StructuredNetworkWordCountWindowed {
       System.exit(1)
     }
 
-    val path = "/home/maurofama/spark-microbench/examples/src/main/scala/org/apache/" +
-      "spark/examples/sql/streaming/files/"
-    val filepath = "/home/maurofama/spark-microbench/examples/src/main/scala/org/apache/" +
-      "spark/examples/sql/streaming/files/csv/sample-aggregate-1000-5.csv"
-    val parquetOutputPath = "/home/maurofama/spark-microbench/examples/src/main/scala/org/apache/" +
-      "spark/examples/sql/streaming/files/csv/sample-aggregate-1000-5.parquet"
+    val filepath = "/home/maurofama/spark-microbench/examples/src/main/scala/org/" +
+      "apache/spark/examples/sql/streaming/files/csv/sample-3000000.csv"
 
+    val parquetOutputPath = "/home/maurofama/spark-microbench/examples/src/main/scala/org/apache/" +
+      "spark/examples/sql/streaming/files/parquet/sample-3000000.parquet"
 
     val sparkConv = SparkSession
       .builder()
@@ -108,7 +107,7 @@ object StructuredNetworkWordCountWindowed {
       .option("path", path)
       .load() */
 
-    val staticDataFrame = spark.read.load(path + "csv/sample-aggregate-1000-5.parquet")
+    val staticDataFrame = spark.read.load(parquetOutputPath)
 
     val startTimestampSeconds = 1640995200 // Esempio: 1 gennaio 2022, 00:00:00 in formato UNIX
     val endTimestampSeconds = 1640998800 // Esempio: 1 gennaio 2022, 01:00:00 in formato UNIX
@@ -117,6 +116,7 @@ object StructuredNetworkWordCountWindowed {
     val getRandomTimestampUDF = udf(() => {
       val randomTS = startTimestampSeconds + (Random.nextDouble() *
         (endTimestampSeconds - startTimestampSeconds)).toLong
+       // println(randomTS*1000)
       new Timestamp(randomTS * 1000) // Converti in millisecondi
     })
 
@@ -124,7 +124,8 @@ object StructuredNetworkWordCountWindowed {
       .schema(staticDataFrame.schema)
       .format("csv")
       .option("header", "true") // Se il file CSV ha una riga di intestazione
-      .option("path", path + "csv") // Inserisci il percorso del file CSV
+      .option("path", "/home/maurofama/spark-microbench/examples/src/main/scala/org/apache/" +
+        "spark/examples/sql/streaming/files/csv") // Inserisci il percorso della folder con il CSV
       .load()
       // .withColumn("timestamp", current_timestamp()) // create timestamp
       .withColumn("timestamp", getRandomTimestampUDF()) // Genera timestamp casuale per ogni riga
@@ -138,10 +139,15 @@ object StructuredNetworkWordCountWindowed {
 
     // Start running the query that prints the windowed word counts to the console
     val query = windowedCounts.writeStream
-      .outputMode("update")
+      .outputMode("complete")
       .format("console")
       .option("truncate", "false")
       .start()
+
+    while(query.isActive) {
+      println(query.lastProgress)
+      Thread.sleep(10000)
+    }
 
     query.awaitTermination()
   }

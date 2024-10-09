@@ -555,9 +555,15 @@ case class StateStoreSaveExec(
               val filteredIter = applyRemovingRowsOlderThanWatermark(iter,
                 watermarkPredicateForDataForLateEvents.get)
               while (filteredIter.hasNext) {
+                // TIMER query (sliding)
+                val t1 = System.nanoTime
                 val row = filteredIter.next().asInstanceOf[UnsafeRow]
                 stateManager.put(store, row)
                 numUpdatedStateRows += 1
+                val duration = (System.nanoTime - t1)
+                // scalastyle:off println
+                System.out.println("query " + duration)
+                // scalastyle:on println
               }
             }
 
@@ -566,14 +572,22 @@ case class StateStoreSaveExec(
 
             new NextIterator[InternalRow] {
               override protected def getNext(): InternalRow = {
+                // TIMER evict (sliding)
                 var removedValueRow: InternalRow = null
                 while(rangeIter.hasNext && removedValueRow == null) {
+                  val t1 = System.nanoTime
                   val rowPair = rangeIter.next()
                   if (watermarkPredicateForKeysForEviction.get.eval(rowPair.key)) {
+
                     stateManager.remove(store, rowPair.key)
+
                     numRemovedStateRows += 1
                     removedValueRow = rowPair.value
                   }
+                  val duration = (System.nanoTime - t1)
+                  // scalastyle:off println
+                  System.out.println("evict " + duration)
+                  // scalastyle:on println
                 }
                 if (removedValueRow == null) {
                   finished = true

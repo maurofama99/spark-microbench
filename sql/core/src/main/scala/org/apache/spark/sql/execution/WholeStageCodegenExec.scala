@@ -803,22 +803,22 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
       // logWarning("agg time" + aggTime)
       s"""
          |${row.code}
-         |long add_start = System.nanoTime();
+         |// long add_start = System.nanoTime();
          |append(${row.value}$doCopy);
-         |long add_end = System.nanoTime();
-         |long add = add_end - add_start;
-         |System.out.println(((org.apache.spark.sql.execution.metric.SQLMetric) references[6] /* aggTime */));
+         |// long add_end = System.nanoTime();
+         |// long add = add_end - add_start;
+         |// System.out.println(((org.apache.spark.sql.execution.metric.SQLMetric) references[6] /* aggTime */));
        """.stripMargin.trim
     } else {
       s"""
          |${row.code}
-         |long add_start = System.nanoTime();
+         |// long add_start = System.nanoTime();
          |append(${row.value}$doCopy);
-         |long add_end = System.nanoTime();
-         |long add = add_end - add_start;
-         |if (${codegenStageId} == 1)  {
-         |     System.out.println("add " + add);
-         |}
+         |// long add_end = System.nanoTime();
+         |// long add = add_end - add_start;
+         |// if (${codegenStageId} == 1)  {
+         |   //   System.out.println("add " + add);
+         |// }
        """.stripMargin.trim
     }
   }

@@ -18,33 +18,33 @@
 // scalastyle:off println
 package org.apache.spark.examples.sql.streaming
 
-import org.apache.spark.sql.SparkSession
+import java.sql.Timestamp
 
-/**
- * Counts words in UTF8 encoded, '\n' delimited text received from the network.
- *
- * Usage: StructuredNetworkWordCount <hostname> <port>
- * <hostname> and <port> describe the TCP server that Structured Streaming
- * would connect to receive data.
- *
- * To run this on your local machine, you need to first run a Netcat server
- *    `$ nc -lk 9999`
- * and then run the example
- *    `$ bin/run-example sql.streaming.StructuredNetworkWordCount
- *    localhost 9999`
- */
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
 object StructuredNetworkWordCount {
+
   def main(args: Array[String]): Unit = {
-    if (args.length < 2) {
-      System.err.println("Usage: StructuredNetworkWordCount <hostname> <port>")
+    if (args.length < 3) {
+      System.err.println("Usage: StructuredNetworkWordCountWindowed <hostname> <port>" +
+        " <window duration in seconds> [<slide duration in seconds>]")
       System.exit(1)
     }
 
     val host = args(0)
     val port = args(1).toInt
+    val windowSize = args(2).toInt
+    val slideSize = if (args.length == 3) windowSize else args(3).toInt
+    if (slideSize > windowSize) {
+      System.err.println("<slide duration> must be less than or equal to <window duration>")
+    }
+    val windowDuration = s"$windowSize seconds"
+    val slideDuration = s"$slideSize seconds"
 
     val spark = SparkSession
       .builder()
+      .config("spark.master", "local")
       .appName("StructuredNetworkWordCount")
       .getOrCreate()
 
@@ -55,18 +55,24 @@ object StructuredNetworkWordCount {
       .format("socket")
       .option("host", host)
       .option("port", port)
+      .option("includeTimestamp", true)
       .load()
 
-    // Split the lines into words
-    val words = lines.as[String].flatMap(_.split(" "))
+    // Split the lines into words, retaining timestamps
+    val words = lines.as[(String, Timestamp)].flatMap(line =>
+      line._1.split(" ").map(word => (word, line._2))
+    ).toDF("word", "timestamp")
 
-    // Generate running word count
-    val wordCounts = words.groupBy("value").count()
+    // Group the data by window and word and compute the count of each group
+    val windowedCounts = words.groupBy(
+      window($"timestamp", windowDuration, slideDuration), $"word"
+    ).count().orderBy("window")
 
-    // Start running the query that prints the running counts to the console
-    val query = wordCounts.writeStream
+    // Start running the query that prints the windowed word counts to the console
+    val query = windowedCounts.writeStream
       .outputMode("complete")
       .format("console")
+      .option("truncate", "false")
       .start()
 
     query.awaitTermination()

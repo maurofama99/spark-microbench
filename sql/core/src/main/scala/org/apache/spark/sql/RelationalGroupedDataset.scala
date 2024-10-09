@@ -72,6 +72,7 @@ class RelationalGroupedDataset protected[sql](
 
     groupType match {
       case RelationalGroupedDataset.GroupByType =>
+        // TIMER
         Dataset.ofRows(df.sparkSession, Aggregate(groupingExprs, aliasedAgg, df.logicalPlan))
       case RelationalGroupedDataset.RollupType =>
         Dataset.ofRows(

@@ -96,7 +96,13 @@ class ObjectAggregationIterator(
 
   override final def next(): UnsafeRow = {
     val entry = aggBufferIterator.next()
+    // TIMER query (sliding)
+    // val t1 = System.nanoTime
     val res = generateOutput(entry.groupingKey, entry.aggregationBuffer)
+    // val duration = (System.nanoTime - t1)
+    // scalastyle:off println
+    // System.out.println("query " + duration)
+    // scalastyle:on println
     numOutputRows += 1
     res
   }

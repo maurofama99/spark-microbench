@@ -607,6 +607,7 @@ case class HashAggregateExec(
 
     val aggTime = metricTerm(ctx, "aggTime")
     val beforeAgg = ctx.freshName("beforeAgg")
+    // TIMER scope (session)
     s"""
        |if (!$initAgg) {
        |  $initAgg = true;
@@ -616,6 +617,7 @@ case class HashAggregateExec(
        |  long $beforeAgg = System.nanoTime();
        |  $doAggFuncName();
        |  $aggTime.add((System.nanoTime() - $beforeAgg) / $NANOS_PER_MILLIS);
+       |  // System.out.println("scope: " + ((System.nanoTime() - $beforeAgg) / $NANOS_PER_MILLIS));
        |}
        |// output the result
        |$outputFromFastHashMap
@@ -656,7 +658,6 @@ case class HashAggregateExec(
     val oomeClassName = classOf[SparkOutOfMemoryError].getName
 
     val findOrInsertRegularHashMap: String = {
-      // TIMER content
       s"""
          |
          |// generate grouping key
