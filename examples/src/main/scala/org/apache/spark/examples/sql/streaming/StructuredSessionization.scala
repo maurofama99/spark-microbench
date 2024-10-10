@@ -46,12 +46,12 @@ object StructuredSessionization {
     if (mode == "SESSION_1") {
 
       val filepath = "/home/maurofama/spark-microbench/examples/src/main/" +
-        "scala/org/apache/spark/examples/sql/streaming/files/csv_session" +
-        "/sample-1000000-inorder.csv"
+        "scala/org/apache/spark/examples/sql/streaming/files/csv_single" +
+        "/sample-1000000-50ooo.csv"
 
       val parquetOutputPath = "/home/maurofama/spark-microbench/examples/src/main/" +
-        "scala/org/apache/spark/examples/sql/streaming/files/csv_session" +
-        "/sample-1000000-inorder.parquet"
+        "scala/org/apache/spark/examples/sql/streaming/files/csv_single" +
+        "/sample-1000000-50ooo.parquet"
 
       val sparkConv = SparkSession
         .builder()
@@ -102,7 +102,7 @@ object StructuredSessionization {
         .format("csv")
         .option("header", "true") // Se il file CSV ha una riga di intestazione
         .option("path", "/home/maurofama/spark-microbench/examples/src/main/scala/org/apache/" +
-          "spark/examples/sql/streaming/files/debug")
+          "spark/examples/sql/streaming/files/csv_single")
         .load()
         // .withColumn("timestamp", current_timestamp()) // create timestamp
         // .withColumn("ts", getRandomTimestampUDF())
@@ -126,7 +126,7 @@ object StructuredSessionization {
       val sessionDuration = s"7 seconds"
 
       val windowedCsvDF = csvDF
-        .withWatermark("ts", "4 seconds")
+        // .withWatermark("ts", "4 seconds")
         .groupBy(
           session_window(col("ts"), sessionDuration),
           col("key")

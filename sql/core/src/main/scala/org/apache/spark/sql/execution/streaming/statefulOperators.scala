@@ -916,8 +916,14 @@ case class SessionWindowStateStoreSaveExec(
     }
 
     while (iter.hasNext) {
+      // TIMER query (session)
+      val t1 = System.nanoTime
       val row = iter.next().asInstanceOf[UnsafeRow]
       val key = stateManager.extractKeyWithoutSession(row)
+      // scalastyle:off println
+      val duration = System.nanoTime - t1
+      System.out.println("query " + duration)
+      // scalastyle:on println
 
       if (curKey == null || curKey != key) {
         // new group appears

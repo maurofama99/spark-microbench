@@ -60,6 +60,7 @@ case class MergingSessionsExec(
   override def outputOrdering: Seq[SortOrder] = child.outputOrdering
 
   override def requiredChildOrdering: Seq[Seq[SortOrder]] = {
+    // TIMER sort node addition, need to find code generation?
     Seq((keyWithoutSessionExpressions ++ Seq(sessionExpression)).map(SortOrder(_, Ascending)))
   }
 

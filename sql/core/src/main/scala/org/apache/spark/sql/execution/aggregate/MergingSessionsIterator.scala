@@ -217,6 +217,7 @@ class MergingSessionsIterator(
     if (hasNext) {
       // Process the current group.
 
+      // TIMER merge
       // scalastyle:off println
       System.out.println("group size: " + inputIterator.length)
       val t1 = System.nanoTime
