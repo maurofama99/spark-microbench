@@ -49,28 +49,28 @@ object StructuredSessionization {
     val port = args(1).toInt
 
     val filepath = "/home/maurofama/spark-microbench/examples/src/main/" +
-      "scala/org/apache/spark/examples/sql/streaming/files/debug" +
-      "/sample-200.csv"
+      "scala/org/apache/spark/examples/sql/streaming/files/csv_session25" +
+      "/2kk5k.csv"
 
     val parquetOutputPath = "/home/maurofama/spark-microbench/examples/src/main/" +
-      "scala/org/apache/spark/examples/sql/streaming/files/debug" +
-      "/sample-200.parquet"
+      "scala/org/apache/spark/examples/sql/streaming/files/csv_session25" +
+      "/2kk5k.parquet"
 
-    val sparkConv = SparkSession
-      .builder()
-      .appName("CSV to Parquet Conversion")
-      .config("spark.master", "local")
-      .getOrCreate()
-
-    val csvData = sparkConv.read.format("csv")
-      .option("header", "true")
-      .load(filepath)
-
-    csvData.write
-      .mode("overwrite") // Sovrascrive se il file esiste già
-      .parquet(parquetOutputPath)
-
-    sparkConv.stop()
+//    val sparkConv = SparkSession
+//      .builder()
+//      .appName("CSV to Parquet Conversion")
+//      .config("spark.master", "local")
+//      .getOrCreate()
+//
+//    val csvData = sparkConv.read.format("csv")
+//      .option("header", "true")
+//      .load(filepath)
+//
+//    csvData.write
+//      .mode("overwrite") // Sovrascrive se il file esiste già
+//      .parquet(parquetOutputPath)
+//
+//    sparkConv.stop()
 
 
     val startTimestampSeconds = 1640995200L // Esempio: 1 gennaio 2022, 00:00:00 in formato UNIX
@@ -95,7 +95,7 @@ object StructuredSessionization {
       .appName("StructuredSessionization")
       .getOrCreate()
 
-    spark.sparkContext.setLogLevel("WARN")
+    // spark.sparkContext.setLogLevel("DEBUG")
 
     import spark.implicits._
 
@@ -127,15 +127,16 @@ object StructuredSessionization {
     val csvDF = spark.readStream
       .schema(staticDataFrame.schema)
       .format("csv")
+      .option("maxFilesPerTrigger", 1)
       .option("header", "true") // Se il file CSV ha una riga di intestazione
       .option("path", "/home/maurofama/spark-microbench/examples/src/main/scala/org/apache/" +
-        "spark/examples/sql/streaming/files/debug")
+        "spark/examples/sql/streaming/files/csv_session1")
       .load()
       // .withColumn("ts", getRandomTimestampUDF())
 
     val lines = csvDF.select($"ts", $"key")
 
-    val sessionDuration = s"7 seconds"
+    val sessionDuration = s"2 seconds"
 
     val windowedCsvDF = lines
       // .withWatermark("ts", "4 seconds")
@@ -145,15 +146,23 @@ object StructuredSessionization {
       )
       .agg(collect_list(col("key")).as("elements"))
 
+    windowedCsvDF.explain()
+
     // Start running the query that prints the session updates to the console
     val query = windowedCsvDF
       .writeStream
       .outputMode("complete")
       .format("console")
-      .option("truncate", "false")
+      .option("truncate", "true")
       .start()
 
+    while(query.isActive) {
+      println(query.lastProgress)
+      Thread.sleep(10000)
+    }
+
     query.awaitTermination()
+
   }
 }
 // scalastyle:on println

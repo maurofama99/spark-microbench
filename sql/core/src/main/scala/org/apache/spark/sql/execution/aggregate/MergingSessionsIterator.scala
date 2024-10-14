@@ -228,7 +228,11 @@ class MergingSessionsIterator(
   override final def next(): UnsafeRow = {
     if (hasNext) {
       // Process the current group.
+      val t1 = System.nanoTime
       processCurrentSortedGroup()
+      // scalastyle:off println
+      System.out.println("merge " + (System.nanoTime - t1))
+      // scalastyle:on println
       // Generate output row for the current group.
       val groupingKey = generateGroupingKey()
 

@@ -138,7 +138,7 @@ class MergingSortWithSessionWindowStateIterator(
       currentRowFromState = SessionRowInformation.of(sessionIterFromState.next())
     } else {
       sessionIterFromState = null
-
+      val t1 = System.nanoTime
       if (currentRowFromInput != null && currentRowFromInput.keys != currentSessionKey) {
         // We expect a small number of sessions per group key, so materializing them
         // and sorting wouldn't hurt much. The important thing is that we shouldn't buffer input
@@ -163,6 +163,9 @@ class MergingSortWithSessionWindowStateIterator(
           currentRowFromState = SessionRowInformation.of(sessionIterFromState.next())
         }
       }
+      // scalastyle:off println
+      System.out.println("merge_sort " + (System.nanoTime - t1))
+      // scalastyle:on println
     }
   }
 }

@@ -803,10 +803,21 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
     } else {
       ""
     }
-    s"""
-      |${row.code}
-      |append(${row.value}$doCopy);
+    if (codegenStageId == 1) {
+      s"""
+         |${row.code}
+         |long startTime = System.nanoTime();
+         |append(${row.value}$doCopy);
+         |long stopTime = System.nanoTime();
+         |long add_time = stopTime - startTime;
+         |System.out.println("add " + add_time);
      """.stripMargin.trim
+    } else {
+      s"""
+         |${row.code}
+         |append(${row.value}$doCopy);
+     """.stripMargin.trim
+    }
   }
 
   override def generateTreeString(

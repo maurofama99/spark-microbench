@@ -886,7 +886,11 @@ case class SessionWindowStateStoreSaveExec(
           new NextIterator[InternalRow] {
             override protected def getNext(): InternalRow = {
               if (rangeIter.hasNext) {
+                val t1 = System.nanoTime
                 val valueRow = rangeIter.next()
+                // scalastyle:off println
+                System.out.println("query " + (System.nanoTime - t1))
+                // scalastyle:on println
                 numOutputRows += 1
                 valueRow
               } else {
