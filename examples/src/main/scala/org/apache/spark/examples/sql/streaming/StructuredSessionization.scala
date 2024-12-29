@@ -40,21 +40,20 @@ import java.sql.Timestamp
 object StructuredSessionization {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 2) {
-      System.err.println("Usage: StructuredSessionization <hostname> <port>")
+    if (args.length < 1) {
+      System.err.println("Usage: StructuredSessionization <input csv folder>")
       System.exit(1)
     }
 
-    val host = args(0)
-    val port = args(1).toInt
+    val input_csv_folder = args(0)
 
     val filepath = "/home/maurofama/spark-microbench/examples/src/main/" +
-      "scala/org/apache/spark/examples/sql/streaming/files/csv_session25" +
-      "/2kk5k.csv"
+      "scala/org/apache/spark/examples/sql/streaming/files/csv_session1" +
+      "/1kk.csv"
 
     val parquetOutputPath = "/home/maurofama/spark-microbench/examples/src/main/" +
-      "scala/org/apache/spark/examples/sql/streaming/files/csv_session25" +
-      "/2kk5k.parquet"
+      "scala/org/apache/spark/examples/sql/streaming/files/csv_session1" +
+      "/1kk.parquet"
 
 //    val sparkConv = SparkSession
 //      .builder()
@@ -128,11 +127,12 @@ object StructuredSessionization {
       .schema(staticDataFrame.schema)
       .format("csv")
       .option("maxFilesPerTrigger", 1)
+      // .trigger(Trigger.AvailableNow)
       .option("header", "true") // Se il file CSV ha una riga di intestazione
       .option("path", "/home/maurofama/spark-microbench/examples/src/main/scala/org/apache/" +
-        "spark/examples/sql/streaming/files/csv_session1")
+        "spark/examples/sql/streaming/files/" + input_csv_folder)
       .load()
-      // .withColumn("ts", getRandomTimestampUDF())
+      // .withColumn("timestamp", getRandomTimestampUDF())
 
     val lines = csvDF.select($"ts", $"key")
 
@@ -145,6 +145,7 @@ object StructuredSessionization {
         col("key")
       )
       .agg(collect_list(col("key")).as("elements"))
+      // .count()
 
     windowedCsvDF.explain()
 
@@ -153,7 +154,8 @@ object StructuredSessionization {
       .writeStream
       .outputMode("complete")
       .format("console")
-      .option("truncate", "true")
+      .option("truncate", "false")
+      .option("numRows", 20)
       .start()
 
     while(query.isActive) {

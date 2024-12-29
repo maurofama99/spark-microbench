@@ -889,7 +889,7 @@ case class SessionWindowStateStoreSaveExec(
                 val t1 = System.nanoTime
                 val valueRow = rangeIter.next()
                 // scalastyle:off println
-                System.out.println("query " + (System.nanoTime - t1))
+                // System.out.println("query " + (System.nanoTime - t1))
                 // scalastyle:on println
                 numOutputRows += 1
                 valueRow

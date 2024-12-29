@@ -171,7 +171,7 @@ case class SortExec(
        |   $sortedIterator = $sorterVariable.sort();
        |   long sort_stop = System.nanoTime();
        |   long sort_time = (sort_stop - sort_start) / 1000000;
-       |   System.out.println("sort_node " + sort_time);
+       |   if (sort_time != 0) System.out.println("sort_node " + sort_time);
        |   $sortTime.add($sorterVariable.getSortTimeNanos() / $NANOS_PER_MILLIS);
        |   $peakMemory.add($sorterVariable.getPeakMemoryUsage());
        |   $spillSize.add($metrics.memoryBytesSpilled() - $spillSizeBefore);

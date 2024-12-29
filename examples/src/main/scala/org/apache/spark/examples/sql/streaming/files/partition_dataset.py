@@ -20,9 +20,9 @@ def get_first_x_rows(csv_file, X, output_file):
     print(f"The first {X} rows have been saved to '{output_file}'.")
 
 # Example usage
-csv_file = '/home/maurofama/spark-microbench/examples/src/main/scala/org/apache/spark/examples/sql/streaming/files/csv_session3/3kk.csv'  # Replace with your input CSV file
-X = 2500000  # Replace with the number of rows you want
-output_file = '/home/maurofama/spark-microbench/examples/src/main/scala/org/apache/spark/examples/sql/streaming/files/csv_session25/2kk5k.csv'  # Replace with the desired output file name
+csv_file = '/home/maurofama/spark-microbench/examples/src/main/scala/org/apache/spark/examples/sql/streaming/files/csv_session4/4kk.csv'  # Replace with your input CSV file
+X = 250000  # Replace with the number of rows you want
+output_file = '/home/maurofama/spark-microbench/examples/src/main/scala/org/apache/spark/examples/sql/streaming/files/csv_session_batch/4.csv'  # Replace with the desired output file name
 
 try:
     get_first_x_rows(csv_file, X, output_file)

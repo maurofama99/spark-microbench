@@ -164,7 +164,7 @@ class MergingSortWithSessionWindowStateIterator(
         }
       }
       // scalastyle:off println
-      System.out.println("merge_sort " + (System.nanoTime - t1))
+      // System.out.println("merge_sort " + (System.nanoTime - t1))
       // scalastyle:on println
     }
   }

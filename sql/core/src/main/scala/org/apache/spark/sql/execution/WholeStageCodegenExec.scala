@@ -810,7 +810,7 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
          |append(${row.value}$doCopy);
          |long stopTime = System.nanoTime();
          |long add_time = stopTime - startTime;
-         |System.out.println("add " + add_time);
+         |// System.out.println("add " + add_time);
      """.stripMargin.trim
     } else {
       s"""

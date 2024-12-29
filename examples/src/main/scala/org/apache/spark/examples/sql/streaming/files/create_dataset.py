@@ -31,9 +31,9 @@ def generate_csv(file_name, total_rows, start_date, end_date):
     print(f"CSV file '{file_name}' generated with {total_rows} rows.")
 
 # Example usage
-file_name = '/home/maurofama/spark-microbench/examples/src/main/scala/org/apache/spark/examples/sql/streaming/files/csv_session4/4kk.csv'  # Replace with desired file name
-total_rows = 40000000  # Replace with the total number of rows to generate
+file_name = '/org/apache/spark/examples/sql/streaming/files/csv_session1/5_1kk.csv'  # Replace with desired file name
+total_rows = 1000000  # Replace with the total number of rows to generate
 start_date = "2024-01-01 00:00:00"  # Replace with the start of the timestamp range
-end_date = "2024-03-16 00:00:00"  # Replace with the end of the timestamp range
+end_date = "2024-01-11 00:04:00"  # Replace with the end of the timestamp range
 
 generate_csv(file_name, total_rows, start_date, end_date)
